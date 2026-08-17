@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blackjack Kelly Bet Sizer</title>
+  </head>
+  <body>
+    <header>
+      <h1>Blackjack Kelly Bet Sizer</h1>
+      <p class="subtitle">Kelly-optimal bet ramp for a card counter, rounded to real chips.</p>
+    </header>
+
+    <main>
+      <section class="panel now">
+        <label class="count-input" for="currentCount">Current true count</label>
+        <input id="currentCount" type="number" step="0.5" value="3" />
+        <div id="recommendation" class="recommendation"></div>
+      </section>
+
+      <div id="warnings" class="warnings" hidden></div>
+
+      <form id="settings" class="settings">
+        <fieldset>
+          <legend>Bankroll</legend>
+          <label for="bankroll">Bankroll ($)</label>
+          <input id="bankroll" type="number" min="0" step="100" />
+          <label for="kellyFraction">Kelly fraction (%)</label>
+          <input id="kellyFraction" type="number" min="1" max="200" step="5" />
+        </fieldset>
+
+        <fieldset>
+          <legend>Table</legend>
+          <label for="minBet">Minimum bet ($)</label>
+          <input id="minBet" type="number" min="1" step="1" />
+          <label for="maxBet">Maximum bet ($)</label>
+          <input id="maxBet" type="number" min="1" step="25" />
+        </fieldset>
+
+        <fieldset>
+          <legend>Edge model</legend>
+          <label for="edgeAtZero">Edge at true count 0 (%)</label>
+          <input id="edgeAtZero" type="number" step="0.05" />
+          <label for="edgePerTrueCount">Edge per +1 true count (%)</label>
+          <input id="edgePerTrueCount" type="number" min="0.01" step="0.05" />
+          <label for="variance">Variance per hand</label>
+          <input id="variance" type="number" min="0.1" step="0.01" />
+        </fieldset>
+
+        <fieldset>
+          <legend>Two hands &amp; heat</legend>
+          <label for="heatCount">Max bet on two hands at true count</label>
+          <input id="heatCount" type="number" step="0.5" />
+          <label for="twoHandTrigger">Spread to two hands above (% of max bet)</label>
+          <input id="twoHandTrigger" type="number" min="1" max="100" step="5" />
+          <label for="twoHandFactor">Two-hand size factor</label>
+          <input id="twoHandFactor" type="number" min="0.1" max="1" step="0.01" />
+        </fieldset>
+
+        <fieldset>
+          <legend>Chips</legend>
+          <label class="check"><input id="simplifyBets" type="checkbox" /> Simplify bets</label>
+          <label for="maxChips">Chips per bet</label>
+          <select id="maxChips">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+          <label class="check"><input id="evenDollars" type="checkbox" /> Even dollar bets (blackjack pays whole dollars)</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Ramp range</legend>
+          <label for="rampFrom">From true count</label>
+          <input id="rampFrom" type="number" step="0.5" value="-2" />
+          <label for="rampTo">To true count</label>
+          <input id="rampTo" type="number" step="0.5" value="10" />
+          <label for="rampStep">Step</label>
+          <input id="rampStep" type="number" min="0.1" step="0.5" value="1" />
+        </fieldset>
+
+        <div class="actions">
+          <button id="reset" type="button">Reset to defaults</button>
+        </div>
+      </form>
+
+      <section class="panel">
+        <h2>Bet ramp</h2>
+        <div class="table-wrap">
+          <table id="ramp">
+            <thead>
+              <tr>
+                <th>TC</th>
+                <th>Edge</th>
+                <th>Kelly</th>
+                <th>Heat cap</th>
+                <th>Bet</th>
+                <th>Hands</th>
+                <th>Total</th>
+                <th>Chips</th>
+                <th>% Kelly</th>
+                <th>Limited by</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="note">
+          <strong>Kelly</strong> and <strong>Heat cap</strong> are one-hand-equivalent wagers; the smaller one sets the bet. Two
+          hands of <em>f</em> × B carry the same risk as one hand of B, so total money on the felt exceeds the equivalent wager when
+          spreading. <strong>% Kelly</strong> compares the rounded bet against full Kelly.
+        </p>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
