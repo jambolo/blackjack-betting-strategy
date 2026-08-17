@@ -71,8 +71,21 @@ describe('recommend', () => {
     const p: Params = { ...base, bankroll: 10000 };
     const r = recommend(p, 4);
     expect(r.limit).toBe('kelly');
-    expect(r.betPerHand).toBe(Math.round((10000 * 0.015) / 1.32));
+    expect(r.betPerHand).toBe(Math.floor((10000 * 0.015) / 1.32));
     expect(r.hands).toBe(1);
+  });
+
+  it('never bets above the target when rounding down', () => {
+    const p: Params = { ...base, bankroll: 100000, simplifyBets: true, maxChips: 2 };
+    for (const tc of [2, 3, 4, 5, 6, 7]) {
+      const r = recommend(p, tc);
+      if (r.limit !== 'table-min') expect(r.equivalent).toBeLessThanOrEqual(r.target + 1e-9);
+    }
+  });
+
+  it('can round to the nearest legal bet instead', () => {
+    const p: Params = { ...base, bankroll: 100000, simplifyBets: true, maxChips: 2, rounding: 'nearest' };
+    expect(recommend(p, 5).betPerHand).toBe(500);
   });
 
   it('follows the heat ramp when it is the tighter constraint', () => {
@@ -84,7 +97,7 @@ describe('recommend', () => {
 
   it('applies the Kelly fraction', () => {
     const half: Params = { ...base, bankroll: 10000, kellyFraction: 0.5 };
-    expect(recommend(half, 4).betPerHand).toBe(Math.round((10000 * 0.015) / 1.32 / 2));
+    expect(recommend(half, 4).betPerHand).toBe(Math.floor((10000 * 0.015) / 1.32 / 2));
   });
 
   it('spreads to two hands above the trigger, keeping equivalent risk', () => {

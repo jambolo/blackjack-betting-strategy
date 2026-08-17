@@ -58,6 +58,14 @@ describe('roundToAllowed', () => {
     expect(roundToAllowed(62.5, 25, 500, { maxChips: 1, evenDollars: false })).toBe(25);
   });
 
+  it('never exceeds the target when rounding down', () => {
+    const rules: ChipRules = { maxChips: 2, evenDollars: false };
+    expect(roundToAllowed(190, 25, 500, rules, 'down')).toBe(125);
+    expect(roundToAllowed(137.4, 25, 500, free, 'down')).toBe(137);
+    expect(roundToAllowed(137.4, 25, 500, even, 'down')).toBe(136);
+    expect(roundToAllowed(1, 25, 500, rules, 'down')).toBe(25);
+  });
+
   it('returns null when no amount satisfies the rules', () => {
     expect(roundToAllowed(50, 25, 60, { maxChips: 1, evenDollars: true })).toBeNull();
   });

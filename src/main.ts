@@ -45,6 +45,7 @@ function readParams(): Params {
     simplifyBets: input('simplifyBets').checked,
     maxChips: Number(select('maxChips').value),
     evenDollars: input('evenDollars').checked,
+    rounding: input('roundDown').checked ? 'down' : 'nearest',
   };
 }
 
@@ -62,6 +63,7 @@ function writeParams(p: Params): void {
   input('simplifyBets').checked = p.simplifyBets;
   select('maxChips').value = String(p.maxChips);
   input('evenDollars').checked = p.evenDollars;
+  input('roundDown').checked = p.rounding === 'down';
   select('maxChips').disabled = !p.simplifyBets;
 }
 

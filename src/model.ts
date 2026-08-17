@@ -1,4 +1,4 @@
-import { chipBreakdown, roundToAllowed, type ChipRules, type ChipStack } from './chips';
+import { chipBreakdown, roundToAllowed, type ChipRules, type ChipStack, type RoundingMode } from './chips';
 
 export interface Params {
   /** Total playing bankroll in dollars. */
@@ -23,6 +23,8 @@ export interface Params {
   /** Chips per bet when simplifying: 1, 2, or 3. */
   readonly maxChips: number;
   readonly evenDollars: boolean;
+  /** How chip rounding resolves: 'down' never bets above the Kelly/heat target. */
+  readonly rounding: RoundingMode;
 }
 
 export type Limit = 'table-min' | 'heat' | 'kelly' | 'table-max';
@@ -63,6 +65,7 @@ export const DEFAULT_PARAMS: Params = {
   simplifyBets: false,
   maxChips: 2,
   evenDollars: false,
+  rounding: 'down',
 };
 
 export function chipRules(p: Params): ChipRules {
@@ -115,7 +118,7 @@ export function recommend(p: Params, trueCount: number): Recommendation {
 
   let limit: Limit;
   if (target <= p.minBet) limit = 'table-min';
-  else if (desired >= ceiling) limit = 'table-max';
+  else if (desired > ceiling + 1e-9) limit = 'table-max';
   else if (heatCap < kelly) limit = 'heat';
   else limit = 'kelly';
 
@@ -123,7 +126,7 @@ export function recommend(p: Params, trueCount: number): Recommendation {
   const hands: 1 | 2 = spread ? 2 : 1;
   const raw = spread ? target * p.twoHandFactor : target;
 
-  const betPerHand = roundToAllowed(Math.max(raw, p.minBet), p.minBet, p.maxBet, rules) ?? 0;
+  const betPerHand = roundToAllowed(Math.max(raw, p.minBet), p.minBet, p.maxBet, rules, p.rounding) ?? 0;
   const equivalent = hands === 2 ? betPerHand / p.twoHandFactor : betPerHand;
 
   return {

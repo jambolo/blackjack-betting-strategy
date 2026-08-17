@@ -81,11 +81,22 @@ export function allowedAmounts(rules: ChipRules, min: number, max: number): numb
   return amountsWithAtMost(rules.maxChips).filter((v) => v >= min && v <= max && (!rules.evenDollars || v % 2 === 0));
 }
 
+/** `nearest` may round a bet up past the target; `down` never does. */
+export type RoundingMode = 'nearest' | 'down';
+
 /**
- * Nearest legal bet to `target` within [min, max]. Ties round down.
+ * Legal bet closest to `target` within [min, max]. `nearest` breaks ties downward;
+ * `down` takes the largest legal amount not above the target, falling back to the
+ * smallest legal amount when the target is below all of them.
  * Returns null when the rules admit no amount in the range.
  */
-export function roundToAllowed(target: number, min: number, max: number, rules: ChipRules): number | null {
+export function roundToAllowed(
+  target: number,
+  min: number,
+  max: number,
+  rules: ChipRules,
+  mode: RoundingMode = 'nearest',
+): number | null {
   if (max < min) return null;
 
   if (rules.maxChips === null) {
@@ -93,13 +104,23 @@ export function roundToAllowed(target: number, min: number, max: number, rules: 
     const lo = Math.max(Math.ceil(min / step) * step, step);
     const hi = Math.floor(max / step) * step;
     if (hi < lo) return null;
-    const snapped = Math.round(target / step) * step;
+    // The epsilon keeps a target that is exactly on a step from floating-point rounding a step low.
+    const snapped = mode === 'down' ? Math.floor(target / step + 1e-9) * step : Math.round(target / step) * step;
     return Math.min(hi, Math.max(lo, snapped));
   }
 
   const candidates = allowedAmounts(rules, min, max);
   const first = candidates[0];
   if (first === undefined) return null;
+
+  if (mode === 'down') {
+    let best = first;
+    for (const value of candidates) {
+      if (value <= target + 1e-9) best = value;
+      else break;
+    }
+    return best;
+  }
 
   let best = first;
   let bestDistance = Math.abs(first - target);
