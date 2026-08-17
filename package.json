@@ -1,0 +1,21 @@
+{
+  "name": "blackjack-betting-strategy",
+  "version": "0.1.0",
+  "description": "Kelly criterion bet sizing for blackjack card counters",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage --coverage.reporter=lcov",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "John Bolton <jambolo@users.noreply.github.com> (https://jambolo.github.io)",
+  "license": "MIT",
+  "packageManager": "pnpm@10.20.0"
+}
