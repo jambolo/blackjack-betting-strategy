@@ -1,6 +1,6 @@
 {
   "name": "blackjack-betting-strategy",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Kelly criterion bet sizing for blackjack card counters",
   "private": true,
   "type": "module",
