@@ -13,8 +13,16 @@
 
     <main>
       <section class="panel now">
-        <label class="count-input" for="currentCount">Current true count</label>
-        <input id="currentCount" type="number" step="0.5" value="3" />
+        <label class="count-input" for="currentCount" title="Running count divided by decks remaining; sets the edge and the bet."
+          >Current true count</label
+        >
+        <input
+          id="currentCount"
+          type="number"
+          step="0.5"
+          value="3"
+          title="Running count divided by decks remaining; sets the edge and the bet."
+        />
         <div id="recommendation" class="recommendation"></div>
       </section>
 
@@ -23,65 +31,129 @@
       <form id="settings" class="settings">
         <fieldset>
           <legend>Bankroll</legend>
-          <label for="bankroll">Bankroll ($)</label>
-          <input id="bankroll" type="number" min="0" step="100" />
-          <label for="kellyFraction">Kelly fraction (%)</label>
-          <input id="kellyFraction" type="number" min="1" max="200" step="5" />
+          <label for="bankroll" title="Total money backing this play.">Bankroll ($)</label>
+          <input id="bankroll" type="number" min="0" step="100" title="Total money backing this play." />
+          <label for="kellyFraction" title="Fraction of full Kelly to wager; 50% halves growth but cuts variance far more."
+            >Kelly fraction (%)</label
+          >
+          <input
+            id="kellyFraction"
+            type="number"
+            min="1"
+            max="200"
+            step="5"
+            title="Fraction of full Kelly to wager; 50% halves growth but cuts variance far more."
+          />
         </fieldset>
 
         <fieldset>
           <legend>Table</legend>
-          <label for="minBet">Minimum bet ($)</label>
-          <input id="minBet" type="number" min="1" step="1" />
-          <label for="maxBet">Maximum bet ($)</label>
-          <input id="maxBet" type="number" min="1" step="25" />
+          <label for="minBet" title="Table minimum per hand.">Minimum bet ($)</label>
+          <input id="minBet" type="number" min="1" step="1" title="Table minimum per hand." />
+          <label for="maxBet" title="Table maximum per hand.">Maximum bet ($)</label>
+          <input id="maxBet" type="number" min="1" step="25" title="Table maximum per hand." />
         </fieldset>
 
         <fieldset>
           <legend>Edge model</legend>
-          <label for="edgeAtZero">Edge at true count 0 (%)</label>
-          <input id="edgeAtZero" type="number" step="0.05" />
-          <label for="edgePerTrueCount">Edge per +1 true count (%)</label>
-          <input id="edgePerTrueCount" type="number" min="0.01" step="0.05" />
-          <label for="variance">Variance per hand</label>
-          <input id="variance" type="number" min="0.1" step="0.01" />
+          <label for="edgeAtZero" title="Player edge at true count 0; negative means the house leads off the top."
+            >Edge at true count 0 (%)</label
+          >
+          <input
+            id="edgeAtZero"
+            type="number"
+            step="0.05"
+            title="Player edge at true count 0; negative means the house leads off the top."
+          />
+          <label for="edgePerTrueCount" title="Edge gained for each +1 true count.">Edge per +1 true count (%)</label>
+          <input id="edgePerTrueCount" type="number" min="0.01" step="0.05" title="Edge gained for each +1 true count." />
+          <label for="variance" title="Variance of one hand per unit wagered; about 1.32 with doubles and splits."
+            >Variance per hand</label
+          >
+          <input
+            id="variance"
+            type="number"
+            min="0.1"
+            step="0.01"
+            title="Variance of one hand per unit wagered; about 1.32 with doubles and splits."
+          />
         </fieldset>
 
         <fieldset>
           <legend>Two hands &amp; heat</legend>
-          <label for="heatCount">Max bet on two hands at true count</label>
-          <input id="heatCount" type="number" step="0.5" />
-          <label for="twoHandTrigger">Spread to two hands above (% of max bet)</label>
-          <input id="twoHandTrigger" type="number" min="1" max="100" step="5" />
-          <label for="twoHandFactor">Two-hand size factor</label>
-          <input id="twoHandFactor" type="number" min="0.1" max="1" step="0.01" />
+          <label for="heatCount" title="True count at which the ramp reaches its ceiling: two hands at the table maximum."
+            >Max bet on two hands at true count</label
+          >
+          <input
+            id="heatCount"
+            type="number"
+            step="0.5"
+            title="True count at which the ramp reaches its ceiling: two hands at the table maximum."
+          />
+          <label for="twoHandTrigger" title="Spread to two hands once the one-hand bet exceeds this share of the table maximum."
+            >Spread to two hands above (% of max bet)</label
+          >
+          <input
+            id="twoHandTrigger"
+            type="number"
+            min="1"
+            max="100"
+            step="5"
+            title="Spread to two hands once the one-hand bet exceeds this share of the table maximum."
+          />
+          <label
+            for="twoHandFactor"
+            title="Per-hand size on two hands as a fraction of the one-hand bet; 0.73 keeps total risk equal."
+            >Two-hand size factor</label
+          >
+          <input
+            id="twoHandFactor"
+            type="number"
+            min="0.1"
+            max="1"
+            step="0.01"
+            title="Per-hand size on two hands as a fraction of the one-hand bet; 0.73 keeps total risk equal."
+          />
         </fieldset>
 
         <fieldset>
           <legend>Chips</legend>
-          <label class="check"><input id="simplifyBets" type="checkbox" /> Simplify bets</label>
-          <label for="maxChips">Chips per bet</label>
-          <select id="maxChips">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-          </select>
-          <label class="check"><input id="evenDollars" type="checkbox" /> Even dollar bets (blackjack pays whole dollars)</label>
-          <label class="check"><input id="roundDown" type="checkbox" /> Round down (never bet above the target)</label>
+          <label
+            class="check"
+            title="Round the bet down to the largest amount the rules below allow, never above the Kelly or heat target; off, the bet rounds to the nearest dollar."
+            ><input id="simplifyBets" type="checkbox" /> Simplify bets (round down, never above the target)</label
+          >
+          <label class="check sub" title="Only even amounts, so a 3:2 blackjack pays a whole number of dollars."
+            ><input id="evenDollars" type="checkbox" /> Even dollar bets (blackjack pays whole dollars)</label
+          >
+          <label
+            class="sub"
+            for="maxDenominations"
+            title="Most chip denominations one bet may show; fewer gives rounder, less conspicuous bets."
+            >Max denominations</label
+          >
+          <input
+            id="maxDenominations"
+            type="number"
+            min="1"
+            max="6"
+            step="1"
+            title="Most chip denominations one bet may show; fewer gives rounder, less conspicuous bets."
+          />
         </fieldset>
 
         <fieldset>
           <legend>Ramp range</legend>
-          <label for="rampFrom">From true count</label>
-          <input id="rampFrom" type="number" step="0.5" value="-2" />
-          <label for="rampTo">To true count</label>
-          <input id="rampTo" type="number" step="0.5" value="10" />
-          <label for="rampStep">Step</label>
-          <input id="rampStep" type="number" min="0.1" step="0.5" value="1" />
+          <label for="rampFrom" title="First true count in the ramp table.">From true count</label>
+          <input id="rampFrom" type="number" step="0.5" value="-2" title="First true count in the ramp table." />
+          <label for="rampTo" title="Last true count in the ramp table.">To true count</label>
+          <input id="rampTo" type="number" step="0.5" value="10" title="Last true count in the ramp table." />
+          <label for="rampStep" title="True count difference between rows.">Step</label>
+          <input id="rampStep" type="number" min="0.1" step="0.5" value="1" title="True count difference between rows." />
         </fieldset>
 
         <div class="actions">
-          <button id="reset" type="button">Reset to defaults</button>
+          <button id="reset" type="button" title="Restore every setting to its default.">Reset to defaults</button>
         </div>
       </form>
 

@@ -60,32 +60,28 @@ describe('heat ramp', () => {
 });
 
 describe('recommend', () => {
-  it('bets the table minimum with no edge', () => {
+  it('bets the smallest legal bet with no edge', () => {
     const r = recommend(base, -2);
     expect(r.hands).toBe(1);
-    expect(r.betPerHand).toBe(base.minBet);
+    // The default even-dollar rule lifts the odd $25 table minimum to $26.
+    expect(r.betPerHand).toBe(26);
     expect(r.limit).toBe('table-min');
   });
 
   it('follows Kelly when the bankroll is the tighter constraint', () => {
-    const p: Params = { ...base, bankroll: 10000 };
+    const p: Params = { ...base, bankroll: 10000, evenDollars: false, maxDenominations: 6 };
     const r = recommend(p, 4);
     expect(r.limit).toBe('kelly');
     expect(r.betPerHand).toBe(Math.floor((10000 * 0.015) / 1.32));
     expect(r.hands).toBe(1);
   });
 
-  it('never bets above the target when rounding down', () => {
-    const p: Params = { ...base, bankroll: 100000, simplifyBets: true, maxChips: 2 };
+  it('never bets above the target', () => {
+    const p: Params = { ...base, bankroll: 100000 };
     for (const tc of [2, 3, 4, 5, 6, 7]) {
       const r = recommend(p, tc);
       if (r.limit !== 'table-min') expect(r.equivalent).toBeLessThanOrEqual(r.target + 1e-9);
     }
-  });
-
-  it('can round to the nearest legal bet instead', () => {
-    const p: Params = { ...base, bankroll: 100000, simplifyBets: true, maxChips: 2, rounding: 'nearest' };
-    expect(recommend(p, 5).betPerHand).toBe(500);
   });
 
   it('follows the heat ramp when it is the tighter constraint', () => {
@@ -96,7 +92,7 @@ describe('recommend', () => {
   });
 
   it('applies the Kelly fraction', () => {
-    const half: Params = { ...base, bankroll: 10000, kellyFraction: 0.5 };
+    const half: Params = { ...base, bankroll: 10000, kellyFraction: 0.5, evenDollars: false, maxDenominations: 6 };
     expect(recommend(half, 4).betPerHand).toBe(Math.floor((10000 * 0.015) / 1.32 / 2));
   });
 
@@ -109,15 +105,25 @@ describe('recommend', () => {
     expect(r.totalWagered).toBeGreaterThan(r.equivalent);
   });
 
-  it('honours the chip rules', () => {
-    const p: Params = { ...base, bankroll: 10000, simplifyBets: true, maxChips: 2 };
-    const r = recommend(p, 4);
-    expect(r.chips.reduce((n, s) => n + s.count, 0)).toBeLessThanOrEqual(2);
+  it('shows the chips that make the bet exactly', () => {
+    const r = recommend({ ...base, bankroll: 10000 }, 4);
+    expect(r.chips.reduce((total, s) => total + s.denomination * s.count, 0)).toBe(r.betPerHand);
   });
 
   it('keeps even bets even', () => {
     const p: Params = { ...base, bankroll: 10000, evenDollars: true };
     expect(recommend(p, 4).betPerHand % 2).toBe(0);
+  });
+
+  it('honours the denomination cap when simplifying', () => {
+    // Kelly target is $113 = 1×$100 + 2×$5 + 3×$1; two denominations round it down to $110.
+    const p: Params = { ...base, bankroll: 10000, evenDollars: false, maxDenominations: 2 };
+    expect(recommend(p, 4).betPerHand).toBe(110);
+  });
+
+  it('rounds to the nearest dollar when not simplifying', () => {
+    const p: Params = { ...base, bankroll: 10000, simplifyBets: false };
+    expect(recommend(p, 4).betPerHand).toBe(114);
   });
 });
 
@@ -138,16 +144,21 @@ describe('ramp', () => {
 });
 
 describe('validate', () => {
-  it('accepts the defaults', () => {
-    expect(validate(base)).toEqual([]);
+  it('accepts the defaults, noting the even-dollar minimum', () => {
+    expect(validate(base)).toEqual(['Chip rules raise the smallest legal bet from $25 to $26.']);
   });
 
   it('reports impossible chip rules', () => {
-    const p: Params = { ...base, simplifyBets: true, maxChips: 1, evenDollars: true, minBet: 25, maxBet: 60 };
+    const p: Params = { ...base, evenDollars: true, minBet: 25, maxBet: 25 };
     expect(validate(p).some((w) => w.includes('No bet'))).toBe(true);
   });
 
   it('reports a max below the min', () => {
     expect(validate({ ...base, maxBet: 10 }).some((w) => w.includes('below the minimum'))).toBe(true);
+  });
+
+  it('reports an unusable denomination cap', () => {
+    expect(validate({ ...base, maxDenominations: 0 }).some((w) => w.includes('Max denominations'))).toBe(true);
+    expect(validate({ ...base, maxDenominations: 0, simplifyBets: false })).toEqual([]);
   });
 });

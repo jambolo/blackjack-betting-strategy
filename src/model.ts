@@ -1,4 +1,4 @@
-import { chipBreakdown, roundToAllowed, type ChipRules, type ChipStack, type RoundingMode } from './chips';
+import { DENOMINATIONS, chipBreakdown, selectBet, type ChipRules, type ChipStack } from './chips';
 
 export interface Params {
   /** Total playing bankroll in dollars. */
@@ -19,12 +19,11 @@ export interface Params {
   readonly twoHandTrigger: number;
   /** True count at which two hands are played at the table maximum (heat ceiling). */
   readonly heatCount: number;
+  /** Round bets down to simpler amounts; gates the two rules below. */
   readonly simplifyBets: boolean;
-  /** Chips per bet when simplifying: 1, 2, or 3. */
-  readonly maxChips: number;
   readonly evenDollars: boolean;
-  /** How chip rounding resolves: 'down' never bets above the Kelly/heat target. */
-  readonly rounding: RoundingMode;
+  /** Most denominations a bet may show when simplifying, 1 to DENOMINATIONS.length. */
+  readonly maxDenominations: number;
 }
 
 export type Limit = 'table-min' | 'heat' | 'kelly' | 'table-max';
@@ -62,14 +61,13 @@ export const DEFAULT_PARAMS: Params = {
   twoHandFactor: 0.73,
   twoHandTrigger: 0.75,
   heatCount: 6,
-  simplifyBets: false,
-  maxChips: 2,
-  evenDollars: false,
-  rounding: 'down',
+  simplifyBets: true,
+  evenDollars: true,
+  maxDenominations: 2,
 };
 
 export function chipRules(p: Params): ChipRules {
-  return { maxChips: p.simplifyBets ? p.maxChips : null, evenDollars: p.evenDollars };
+  return { simplify: p.simplifyBets, evenDollars: p.evenDollars, maxDenominations: p.maxDenominations };
 }
 
 export function edgeAt(p: Params, trueCount: number): number {
@@ -126,7 +124,7 @@ export function recommend(p: Params, trueCount: number): Recommendation {
   const hands: 1 | 2 = spread ? 2 : 1;
   const raw = spread ? target * p.twoHandFactor : target;
 
-  const betPerHand = roundToAllowed(Math.max(raw, p.minBet), p.minBet, p.maxBet, rules, p.rounding) ?? 0;
+  const betPerHand = selectBet(raw, p.minBet, p.maxBet, rules) ?? 0;
   const equivalent = hands === 2 ? betPerHand / p.twoHandFactor : betPerHand;
 
   return {
@@ -176,12 +174,20 @@ export function validate(p: Params): string[] {
     warnings.push(`Heat count must be above the break-even count (${breakEvenCount(p).toFixed(1)}); the ramp is ignored.`);
   }
 
+  const badDenominations =
+    p.simplifyBets &&
+    (!Number.isInteger(p.maxDenominations) || p.maxDenominations < 1 || p.maxDenominations > DENOMINATIONS.length);
+  if (badDenominations) {
+    warnings.push(`Max denominations must be a whole number from 1 to ${DENOMINATIONS.length}.`);
+    return warnings;
+  }
+
   const rules = chipRules(p);
-  const lowest = roundToAllowed(p.minBet, p.minBet, p.maxBet, rules);
+  const lowest = selectBet(p.minBet, p.minBet, p.maxBet, rules);
   if (lowest === null) warnings.push('No bet between the table minimum and maximum satisfies the chip rules.');
   else if (lowest !== p.minBet) warnings.push(`Chip rules raise the smallest legal bet from $${p.minBet} to $${lowest}.`);
 
-  const highest = roundToAllowed(p.maxBet, p.minBet, p.maxBet, rules);
+  const highest = selectBet(p.maxBet, p.minBet, p.maxBet, rules);
   if (highest !== null && highest !== p.maxBet) {
     warnings.push(`Chip rules lower the largest legal bet from $${p.maxBet} to $${highest}.`);
   }
