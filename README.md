@@ -33,17 +33,26 @@ the Kelly wager and the heat ramp, and the table tells you which one is binding.
 
 ## Chips
 
-Bets are made from $1, $5, $25, $100, $500, and $1000 chips, and the recommendation shows the stack to push out.
+Bets are made from $1, $5, $25, $100, $500, and $1000 chips, and the recommendation shows the stack to push out. The stack is
+always the fewest chips that make the amount: take the largest chip that fits in what is left and repeat. Because the
+denominations form a divisibility chain, no other stack makes the same amount with fewer chips.
 
-- **Simplify bets** restricts a bet to 1, 2, or 3 chips total, giving a ramp of camouflage-friendly amounts such as $25, $125,
-  $200, $500 instead of exact figures like $274.
-- **Even dollar bets** keeps every bet divisible by 2 so a 3:2 blackjack pays a whole number of dollars.
-- **Round down** resolves rounding downward so a rounded bet never exceeds the Kelly or heat target. Overbetting Kelly raises
-  risk of ruin far faster than underbetting costs expected value, so this is on by default; turn it off to round to the nearest
-  legal amount instead.
+- **Simplify bets** rounds the bet down to the largest whole-dollar amount, at or below the Kelly or heat target, that the
+  rules below allow. Overbetting Kelly raises risk of ruin far faster than underbetting costs expected value, so this is on by
+  default; turned off, the rules below are ignored and the bet is the target rounded to the nearest dollar.
+- **Even dollar bets** keeps every bet divisible by 2 so a 3:2 blackjack pays a whole number of dollars. On its own this costs
+  at most $1 of bet. On by default.
+- **Max denominations** caps how many chip denominations the bet's stack may show. Fewer denominations give rounder,
+  camouflage-friendly amounts - with two denominations a $274 target becomes $250 rather than an obviously calculated figure.
+  Defaults to 2.
 
-Conflicting settings are reported above the form — for example, a $25 table minimum combined with 1-chip even-dollar bets has
-no legal amount below $100.
+A bet must satisfy every enabled rule at once, judged on its fewest-chips stack, and the rules interact: an even-dollar target
+of $135 capped at three denominations cannot take the usual $1 repair to $134, because $100 + $25 + $5 + 4×$1 shows four
+denominations, so the bet falls to $130 = $100 + $25 + $5.
+
+The table minimum is the one thing that outranks "never exceed the target": a target below it is raised to the smallest
+allowed bet instead. Conflicting settings are reported above the form - for example, an even-dollar bet at a $25 table minimum
+cannot round down to $24, so the smallest legal bet becomes $26.
 
 ## Development
 

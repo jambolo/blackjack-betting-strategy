@@ -18,12 +18,6 @@ function input(id: string): HTMLInputElement {
   return element;
 }
 
-function select(id: string): HTMLSelectElement {
-  const element = document.getElementById(id);
-  if (!(element instanceof HTMLSelectElement)) throw new Error(`Missing select: ${id}`);
-  return element;
-}
-
 function element(id: string): HTMLElement {
   const found = document.getElementById(id);
   if (!found) throw new Error(`Missing element: ${id}`);
@@ -43,9 +37,8 @@ function readParams(): Params {
     twoHandTrigger: input('twoHandTrigger').valueAsNumber / 100,
     heatCount: input('heatCount').valueAsNumber,
     simplifyBets: input('simplifyBets').checked,
-    maxChips: Number(select('maxChips').value),
     evenDollars: input('evenDollars').checked,
-    rounding: input('roundDown').checked ? 'down' : 'nearest',
+    maxDenominations: input('maxDenominations').valueAsNumber,
   };
 }
 
@@ -61,10 +54,8 @@ function writeParams(p: Params): void {
   input('twoHandTrigger').value = String(Math.round(p.twoHandTrigger * 100));
   input('heatCount').value = String(p.heatCount);
   input('simplifyBets').checked = p.simplifyBets;
-  select('maxChips').value = String(p.maxChips);
   input('evenDollars').checked = p.evenDollars;
-  input('roundDown').checked = p.rounding === 'down';
-  select('maxChips').disabled = !p.simplifyBets;
+  input('maxDenominations').value = String(p.maxDenominations);
 }
 
 function readRange(): RampRange {
@@ -175,7 +166,8 @@ function update(): void {
   const range = readRange();
   const currentCount = input('currentCount').valueAsNumber;
 
-  select('maxChips').disabled = !p.simplifyBets;
+  input('evenDollars').disabled = !p.simplifyBets;
+  input('maxDenominations').disabled = !p.simplifyBets;
 
   const warnings = validate(p);
   renderWarnings(warnings);

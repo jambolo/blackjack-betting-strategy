@@ -1,4 +1,4 @@
-/** Casino chip denominations available for making a bet. */
+/** Casino chip denominations available for making a bet, ascending. */
 export const DENOMINATIONS = [1, 5, 25, 100, 500, 1000] as const;
 
 export type Denomination = (typeof DENOMINATIONS)[number];
@@ -9,15 +9,22 @@ export interface ChipStack {
 }
 
 export interface ChipRules {
-  /** Maximum number of chips allowed in a single bet, or null for no restriction. */
-  readonly maxChips: number | null;
+  /** Round down to the largest bet the rules below allow. Off, they are ignored and the bet rounds to the nearest dollar. */
+  readonly simplify: boolean;
   /** Restrict bets to even dollar amounts so a 3:2 blackjack pays whole dollars. */
   readonly evenDollars: boolean;
+  /** Most denominations a bet may show, 1 to DENOMINATIONS.length (no restriction). */
+  readonly maxDenominations: number;
 }
 
-/** Greedy decomposition is optimal for this denomination set (it is canonical). */
+/**
+ * Fewest chips that make `amount` exactly, largest denomination first. Take the largest chip that
+ * fits in what is left, repeat. Optimal rather than merely greedy: the denominations form a
+ * divisibility chain (1 | 5 | 25 | 100 | 500 | 1000), so holding back a larger chip always costs
+ * at least two smaller ones to replace it.
+ */
 export function chipBreakdown(amount: number): ChipStack[] {
-  let remaining = Math.max(0, Math.round(amount));
+  let remaining = Math.max(0, Math.floor(amount));
   const stacks: ChipStack[] = [];
   for (let i = DENOMINATIONS.length - 1; i >= 0; i--) {
     const denomination = DENOMINATIONS[i]!;
@@ -30,106 +37,71 @@ export function chipBreakdown(amount: number): ChipStack[] {
   return stacks;
 }
 
+export function chipValue(stacks: ChipStack[]): number {
+  return stacks.reduce((total, stack) => total + stack.denomination * stack.count, 0);
+}
+
 /** Fewest chips that can make the amount. */
 export function chipCount(amount: number): number {
   return chipBreakdown(amount).reduce((total, stack) => total + stack.count, 0);
+}
+
+/** Distinct denominations in the fewest-chips breakdown, i.e. how many chip colours the bet shows. */
+export function denominationCount(amount: number): number {
+  return chipBreakdown(amount).length;
+}
+
+/**
+ * Whether a bet of `amount` satisfies the chip rules. The denomination cap is judged on the
+ * fewest-chips stack: any amount could stay under the cap paid out in $1 chips, but the point of
+ * the cap is that the stack actually pushed out looks simple.
+ */
+export function isAllowed(amount: number, rules: ChipRules): boolean {
+  if (!Number.isInteger(amount) || amount <= 0) return false;
+  if (!rules.simplify) return true;
+  if (rules.evenDollars && amount % 2 !== 0) return false;
+  return chipBreakdown(amount).length <= rules.maxDenominations;
+}
+
+/**
+ * Chips for the largest amount at or below `target` that satisfies the rules; empty when even $1
+ * does not. The scan is short: every multiple of $1000 is a single even denomination, so allowed
+ * amounts are never more than $1000 apart.
+ */
+export function selectChips(target: number, rules: ChipRules): ChipStack[] {
+  let amount = Math.floor(target);
+  while (amount > 0 && !isAllowed(amount, rules)) amount--;
+  return chipBreakdown(amount);
 }
 
 export function formatChips(stacks: ChipStack[]): string {
   return stacks.map((s) => `${s.count}×$${s.denomination}`).join(' + ');
 }
 
-const comboCache = new Map<number, number[]>();
-
-/** Every amount makeable with at most `maxChips` chips, ascending. */
-function amountsWithAtMost(maxChips: number): number[] {
-  const cached = comboCache.get(maxChips);
-  if (cached) return cached;
-
-  const sums = new Set<number>();
-  const walk = (start: number, chipsLeft: number, total: number): void => {
-    if (total > 0) sums.add(total);
-    if (chipsLeft === 0) return;
-    for (let i = start; i < DENOMINATIONS.length; i++) {
-      walk(i, chipsLeft - 1, total + DENOMINATIONS[i]!);
-    }
-  };
-  walk(0, Math.max(0, Math.floor(maxChips)), 0);
-
-  const amounts = [...sums].sort((a, b) => a - b);
-  comboCache.set(maxChips, amounts);
-  return amounts;
-}
-
-export function isAllowed(amount: number, rules: ChipRules): boolean {
-  if (!Number.isInteger(amount) || amount <= 0) return false;
-  if (rules.evenDollars && amount % 2 !== 0) return false;
-  if (rules.maxChips !== null && chipCount(amount) > rules.maxChips) return false;
-  return true;
-}
-
-/** Allowed amounts within [min, max], ascending. Unbounded chip counts yield every legal dollar amount. */
-export function allowedAmounts(rules: ChipRules, min: number, max: number): number[] {
-  const step = rules.evenDollars ? 2 : 1;
-  if (rules.maxChips === null) {
-    const lo = Math.ceil(min / step) * step;
-    const hi = Math.floor(max / step) * step;
-    const amounts: number[] = [];
-    for (let value = Math.max(lo, step); value <= hi; value += step) amounts.push(value);
-    return amounts;
-  }
-  return amountsWithAtMost(rules.maxChips).filter((v) => v >= min && v <= max && (!rules.evenDollars || v % 2 === 0));
-}
-
-/** `nearest` may round a bet up past the target; `down` never does. */
-export type RoundingMode = 'nearest' | 'down';
-
 /**
- * Legal bet closest to `target` within [min, max]. `nearest` breaks ties downward;
- * `down` takes the largest legal amount not above the target, falling back to the
- * smallest legal amount when the target is below all of them.
- * Returns null when the rules admit no amount in the range.
+ * Bet for `target` held inside the table limits: with `simplify` the largest allowed amount at or
+ * below the target, otherwise the target rounded to the nearest dollar.
+ *
+ * The table minimum is the one thing that outranks "never exceed the target": you cannot bet
+ * below it, so a target underneath it is raised to the smallest allowed bet instead. Returns null
+ * when the limits and the chip rules together leave no legal amount.
  */
-export function roundToAllowed(
-  target: number,
-  min: number,
-  max: number,
-  rules: ChipRules,
-  mode: RoundingMode = 'nearest',
-): number | null {
-  if (max < min) return null;
+export function selectBet(target: number, min: number, max: number, rules: ChipRules): number | null {
+  const lo = Math.ceil(min);
+  const hi = Math.floor(max);
+  if (hi < lo) return null;
 
-  if (rules.maxChips === null) {
-    const step = rules.evenDollars ? 2 : 1;
-    const lo = Math.max(Math.ceil(min / step) * step, step);
-    const hi = Math.floor(max / step) * step;
-    if (hi < lo) return null;
-    // The epsilon keeps a target that is exactly on a step from floating-point rounding a step low.
-    const snapped = mode === 'down' ? Math.floor(target / step + 1e-9) * step : Math.round(target / step) * step;
-    return Math.min(hi, Math.max(lo, snapped));
+  if (!rules.simplify) return Math.min(hi, Math.max(lo, Math.round(target)));
+
+  // The epsilon keeps a target that is exactly on a whole dollar from floating-point falling a dollar short.
+  const capped = Math.min(Math.floor(target + 1e-9), hi);
+  if (capped >= lo) {
+    const value = chipValue(selectChips(capped, rules));
+    if (value >= lo) return value;
   }
 
-  const candidates = allowedAmounts(rules, min, max);
-  const first = candidates[0];
-  if (first === undefined) return null;
-
-  if (mode === 'down') {
-    let best = first;
-    for (const value of candidates) {
-      if (value <= target + 1e-9) best = value;
-      else break;
-    }
-    return best;
+  for (let value = lo; value <= hi; value++) {
+    if (isAllowed(value, rules)) return value;
   }
-
-  let best = first;
-  let bestDistance = Math.abs(first - target);
-  for (const value of candidates) {
-    const distance = Math.abs(value - target);
-    if (distance < bestDistance) {
-      best = value;
-      bestDistance = distance;
-    }
-  }
-  return best;
+  return null;
 }

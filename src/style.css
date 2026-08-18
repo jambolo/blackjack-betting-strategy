@@ -154,8 +154,13 @@ input[type='checkbox'] {
   width: auto;
 }
 
+input:disabled,
 select:disabled {
   opacity: 0.45;
+}
+
+label.sub {
+  padding-left: 1.4rem;
 }
 
 #currentCount {
