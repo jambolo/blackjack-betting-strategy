@@ -8,6 +8,7 @@ import {
   ramp,
   recommend,
   tableCeiling,
+  unitSize,
   validate,
   type Params,
 } from './model';
@@ -27,7 +28,19 @@ describe('edge model', () => {
   });
 
   it('sizes the full Kelly bet as bankroll × edge / variance', () => {
-    expect(fullKellyBet(base, 5)).toBeCloseTo((40000 * 0.02) / 1.32);
+    expect(fullKellyBet(base, 5)).toBeCloseTo((40000 * 0.02) / 1.3);
+  });
+});
+
+describe('unit size', () => {
+  it('is the Kelly wager added per +0.5% of edge', () => {
+    expect(unitSize(base)).toBeCloseTo((0.005 * 40000) / 1.3);
+    // With the default edge-per-true-count of 0.5%, it matches the Kelly increment per true count.
+    expect(unitSize(base)).toBeCloseTo(fullKellyBet(base, 5) - fullKellyBet(base, 4));
+  });
+
+  it('scales with the Kelly fraction', () => {
+    expect(unitSize({ ...base, kellyFraction: 0.5 })).toBeCloseTo(unitSize(base) / 2);
   });
 });
 
@@ -72,7 +85,7 @@ describe('recommend', () => {
     const p: Params = { ...base, bankroll: 10000, evenDollars: false, maxDenominations: 6 };
     const r = recommend(p, 4);
     expect(r.limit).toBe('kelly');
-    expect(r.betPerHand).toBe(Math.floor((10000 * 0.015) / 1.32));
+    expect(r.betPerHand).toBe(Math.floor((10000 * 0.015) / 1.3));
     expect(r.hands).toBe(1);
   });
 
@@ -93,7 +106,7 @@ describe('recommend', () => {
 
   it('applies the Kelly fraction', () => {
     const half: Params = { ...base, bankroll: 10000, kellyFraction: 0.5, evenDollars: false, maxDenominations: 6 };
-    expect(recommend(half, 4).betPerHand).toBe(Math.floor((10000 * 0.015) / 1.32 / 2));
+    expect(recommend(half, 4).betPerHand).toBe(Math.floor((10000 * 0.015) / 1.3 / 2));
   });
 
   it('spreads to two hands above the trigger, keeping equivalent risk', () => {
@@ -117,13 +130,13 @@ describe('recommend', () => {
 
   it('honours the denomination cap when simplifying', () => {
     // Kelly target is $113 = 1×$100 + 2×$5 + 3×$1; two denominations round it down to $110.
-    const p: Params = { ...base, bankroll: 10000, evenDollars: false, maxDenominations: 2 };
+    const p: Params = { ...base, bankroll: 9800, evenDollars: false, maxDenominations: 2 };
     expect(recommend(p, 4).betPerHand).toBe(110);
   });
 
   it('rounds to the nearest dollar when not simplifying', () => {
     const p: Params = { ...base, bankroll: 10000, simplifyBets: false };
-    expect(recommend(p, 4).betPerHand).toBe(114);
+    expect(recommend(p, 4).betPerHand).toBe(115);
   });
 });
 

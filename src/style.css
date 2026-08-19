@@ -163,6 +163,17 @@ label.sub {
   padding-left: 1.4rem;
 }
 
+.computed-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.computed-value {
+  width: 7rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 #currentCount {
   font-size: 1.1rem;
 }

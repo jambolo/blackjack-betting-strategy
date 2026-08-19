@@ -1,7 +1,7 @@
 import './style.css';
 import { formatChips } from './chips';
 import { money, percent, signedCount } from './format';
-import { DEFAULT_PARAMS, ramp, recommend, validate, type Params, type RampRange, type Recommendation } from './model';
+import { DEFAULT_PARAMS, ramp, recommend, unitSize, validate, type Params, type RampRange, type Recommendation } from './model';
 
 const STORAGE_KEY = 'blackjack-betting-strategy/params';
 
@@ -171,6 +171,8 @@ function update(): void {
 
   const warnings = validate(p);
   renderWarnings(warnings);
+
+  element('unitSize').textContent = money(unitSize(p));
 
   const fatal = p.bankroll <= 0 || p.minBet <= 0 || p.maxBet < p.minBet || p.variance <= 0 || p.twoHandFactor <= 0;
   if (fatal || !Number.isFinite(currentCount)) {

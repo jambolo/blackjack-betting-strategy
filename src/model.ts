@@ -11,7 +11,7 @@ export interface Params {
   readonly edgeAtZero: number;
   /** Additional edge per +1 true count, as a decimal (e.g. 0.005). */
   readonly edgePerTrueCount: number;
-  /** Variance per unit wagered on one hand (~1.32 for typical rules). */
+  /** Variance per unit wagered on one hand (~1.3 for typical rules). */
   readonly variance: number;
   /** Per-hand size, as a fraction of the one-hand bet, that keeps risk equal when playing two hands. */
   readonly twoHandFactor: number;
@@ -57,7 +57,7 @@ export const DEFAULT_PARAMS: Params = {
   maxBet: 500,
   edgeAtZero: -0.005,
   edgePerTrueCount: 0.005,
-  variance: 1.32,
+  variance: 1.3,
   twoHandFactor: 0.73,
   twoHandTrigger: 0.75,
   heatCount: 6,
@@ -84,6 +84,12 @@ export function fullKellyBet(p: Params, trueCount: number): number {
   const edge = edgeAt(p, trueCount);
   if (edge <= 0 || p.variance <= 0) return 0;
   return (p.bankroll * edge) / p.variance;
+}
+
+/** Kelly wager, at the chosen Kelly fraction, added per +0.5% of edge. */
+export function unitSize(p: Params): number {
+  if (p.variance <= 0) return 0;
+  return (0.005 * p.bankroll * p.kellyFraction) / p.variance;
 }
 
 /**

@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Blackjack Kelly Bet Sizer</title>
+    <title>Blackjack Betting Calculator</title>
   </head>
   <body>
     <header>
-      <h1>Blackjack Kelly Bet Sizer</h1>
+      <h1>Blackjack Betting Calculator</h1>
       <p class="subtitle">Kelly-optimal bet ramp for a card counter, rounded to real chips.</p>
     </header>
 
@@ -44,6 +44,10 @@
             step="5"
             title="Fraction of full Kelly to wager; 50% halves growth but cuts variance far more."
           />
+          <span class="computed-label" title="Kelly wager, at the fraction above, added for each +0.5% of edge."
+            >Unit size (per 0.5% edge)</span
+          >
+          <output id="unitSize" class="computed-value" for="bankroll kellyFraction variance"></output>
         </fieldset>
 
         <fieldset>
@@ -67,7 +71,7 @@
           />
           <label for="edgePerTrueCount" title="Edge gained for each +1 true count.">Edge per +1 true count (%)</label>
           <input id="edgePerTrueCount" type="number" min="0.01" step="0.05" title="Edge gained for each +1 true count." />
-          <label for="variance" title="Variance of one hand per unit wagered; about 1.32 with doubles and splits."
+          <label for="variance" title="Variance of one hand per unit wagered; about 1.3 with doubles and splits."
             >Variance per hand</label
           >
           <input
@@ -75,7 +79,7 @@
             type="number"
             min="0.1"
             step="0.01"
-            title="Variance of one hand per unit wagered; about 1.32 with doubles and splits."
+            title="Variance of one hand per unit wagered; about 1.3 with doubles and splits."
           />
         </fieldset>
 
